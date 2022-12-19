@@ -1,104 +1,81 @@
-const User = require('../models/User')
-const Note = require('../models/Note')
-const asyncHandler = require('express-async-handler')
-const bcrypt = require('bcrypt')
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const asyncHandler = require("express-async-handler");
+const User = require("../models/User");
 
-//@desc Get all users
-//@route GET /users
-//@access Private
-const getAllUsers = asyncHandler(async (req, res) => {
-    const users = await User.find().select('-password').lean();
-    if (!users?.length) {
-        return res.status(400).json({ message: 'No users found!' })
-    }
-    res.json(users);
-})
+// @desc Register new user
+// @route POST /api/users
+// @access Public
+const registerUser = asyncHandler(async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    res.status(400);
+    throw new Error("Please fill in all the fields!");
+  }
+  // check if user exists
+  const userExist = await User.findOne({ username });
+  console.log("existing user", userExist);
+  if (userExist) {
+    res.status(400);
+    throw new Error("User already exists!");
+  }
+  // Hash password
+  const salt = await bcrypt.genSalt(10);
+  const hashPassword = await bcrypt.hash(password, salt);
+  console.log("hash", hashPassword);
+  // create user
+  const user = await User.create({
+    username,
+    password: hashPassword,
+  });
+  if (user) {
+    res.status(201).json({
+      _id: user._id,
+      username: user.username,
+      token: generateToken(user._id),
+    });
+  } else {
+    res.status(400);
+    throw new Error("Invalid user data!");
+  }
+});
 
-//@desc Create new  users
-//@route POST /users
-//@access Private
-const createNewUser = asyncHandler(async (req, res) => {
-    const { username, password, roles } = req.body;
-    // Confirm data
-    if (!username || !password || !Array.isArray(roles) || !roles.length) {
-        return res.status(400).json({ message: 'All fields are required!' })
-    }
-    // Check for duplicates
-    const duplicate = await User.findOne({ username }).lean().exec();
-    if (duplicate) {
-        return res.status(409).json({ message: 'Duplicate username' })
-    }
-    //Hash password
-    const hashPassword = await bcrypt.hash(password, 10);
-    const userObject = { username, password: hashPassword, roles }
+// @desc Authenticate user
+// @route POST /api/users/login
+// @access Public
+const loginUser = asyncHandler(async (req, res) => {
+  console.log(req.body);
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+  console.log("found user", user);
 
-    //Create and store new user
-    const user = await User.create(userObject);
-    if (user) {
-        res.status(201).json({ messaage: `New User ${user.username} created` })
-    } else {
-        res.status(400).json({ message: 'Invalid user data received!' })
-    }
-})
+  if (user && (await bcrypt.compare(password, user.password))) {
+    res.status(200).json({
+      _id: user._id,
+      username: user.username,
+      token: generateToken(user._id),
+    });
+  } else {
+    res.status(400).json({
+      message: "Invalid credentials!",
+    });
+  }
+});
 
-//@desc Update a  users
-//@route PATCH /users
-//@access Private
-const updateUser = asyncHandler(async (req, res) => {
-    const { id, username, roles, active, password } = req.body;
-    // Confirm data
-    if (!id || !username || !Array.isArray(roles) || !roles.length || typeof active !== 'boolean') {
-        return res.status(400).json({ message: 'All fields are required!' })
-    }
-    // Find user
-    const user = await User.findById(id).exec();
-    if (!user) {
-        return res.status(400).json({ message: 'User not found' })
-    }
-    // check for duplicate
-    const duplicate = await User.findOne({ username }).lean().exec();
-    //Allow updates to origional user
-    if (duplicate && duplicate?._id.toString() !== id) {
-        return res.status(409).json({ message: 'Duplicate username' })
-    }
-    user.username = username;
-    user.roles = roles;
-    user.active = active;
-    if (password) {
-        // Hash password
-        usre.password = await bcrypt.hash(password, 10) // salt rounds
-    }
-    const updatedUser = await user.save();
-    res.json({ message: `${updatedUser.username} updated!` })
-})
+// @desc Get user
+// @route GET /api/users/me
+// @access Private
+const getMe = asyncHandler(async (req, res) => {
+  // const { _id, name, email } = await User.findById(req.user.id);
+  res.status(200).json(req.user);
+});
 
-//@desc Delete a  users
-//@route DELETE /users
-//@access Private
-const deleteUser = asyncHandler(async (req, res) => {
-    const { id } = req.body;
-
-    if (!id) {
-        return res.status(400).json({ message: 'User ID Required' })
-    }
-    const note = await Note.findOne({ user: id }).lean().exec();
-    if (note) {
-        return res.status(400).json({ message: 'User have assigned notes!' })
-    }
-
-    const user = await User.findById(id).exec()
-    if (!user) {
-        return res.status(400).json({ message: 'User not found' });
-    }
-
-    const result = await user.deleteOne();
-    const reply = `Username ${result.username} with ID ${result._id} deleted`
-    res.json(reply)
-})
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+};
 
 module.exports = {
-    getAllUsers,
-    createNewUser,
-    updateUser,
-    deleteUser
-}
+  registerUser,
+  loginUser,
+  getMe,
+};

@@ -8,7 +8,7 @@ const enums = require("../enums");
 //@route GET /plots
 //@access private
 const getAllPlots = asyncHandler(async (req, res) => {
-  const plot = await Plot.find().lean();
+  const plot = await Plot.find().populate("blockId").populate("customerId");
   if (!plot?.length) {
     return res.status(404).json({ message: "No plot found" });
   }
@@ -108,22 +108,34 @@ const createNewPlot = asyncHandler(async (req, res) => {
 //@route Patch /plots
 //@access private
 const updatePlot = asyncHandler(async (req, res) => {
-  const { _id, name, area, area_unit, category } = req.body;
-
+  const {
+    _id,
+    blockId,
+    plot_number,
+    plot_type,
+    area_unit,
+    area,
+    category,
+    is_cornered,
+  } = req.body;
   //Validate fields
-  if (!_id || !name || !area || !area_unit || !category) {
+  if (
+    (!_id,
+    !blockId || !plot_number || !plot_type || !area || !area_unit || !category)
+  ) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  //Find Note
-  const block = await Block.findById(_id).exec();
+  //Find Plot
+  const plot = await Plot.findById(_id).exec();
 
-  if (!block) {
-    return res.status(400).json({ messaage: "No block found!" });
+  if (!plot) {
+    return res.status(400).json({ messaage: "No plot found!" });
   }
 
   let allowedUnits = [enums.area_unit.kanal, enums.area_unit.marla];
   let allowedCategory = [enums.category.commercial, enums.category.residential];
+  let allowedPlotType = [enums.type.shop, enums.type.house];
 
   if (allowedUnits.indexOf(area_unit) < 0) {
     res.status(400).json({ message: "Invalid unit for area!" });
@@ -131,21 +143,43 @@ const updatePlot = asyncHandler(async (req, res) => {
   if (allowedCategory.indexOf(category) < 0) {
     res.status(400).json({ message: "Invalid plot category!" });
   }
+  if (allowedPlotType.indexOf(plot_type) < 0) {
+    res.status(400).json({ message: "Invalid plot type!" });
+  }
+  // Check for block
+  const foundBlock = await Block.findOne({ _id: blockId }).lean().exec();
+  if (!foundBlock) {
+    return res.status(409).json({ message: "Block not found!" });
+  }
 
-  // Check for duplicate name
-  const duplicate = await Block.findOne({ name }).lean().exec();
+  // Check for duplicate title
+  const duplicate = await Plot.findOne({
+    $and: [{ plot_number: { $eq: plot_number } }, { _id: { $ne: _id } }],
+  })
+    .lean()
+    .exec();
 
+  console.log("duplicate", duplicate);
+  if (duplicate) {
+    return res.status(409).json({ message: "Duplicate plot number" });
+  }
   // Allow renaming of the original name
   if (duplicate && duplicate?._id.toString() !== _id) {
     return res.status(409).json({ message: "Duplicate block name" });
   }
 
-  block.name = name;
-  block.area = area;
-  block.area_unit = area_unit;
-  block.category = category;
-  const updatedBlock = await block.save();
-  res.json({ message: `${updatedBlock.name} updated!`, data: updatedBlock });
+  plot.plot_number = plot_number;
+  plot.plot_type = plot_type;
+  plot.area_unit = area_unit;
+  plot.area = area;
+  plot.category = category;
+  plot.is_cornered = is_cornered;
+
+  const updatedPlot = await plot.save();
+  res.json({
+    message: `${updatedPlot.plot_number} updated!`,
+    data: updatedPlot,
+  });
 });
 
 //@desc Delete a Plot

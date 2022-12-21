@@ -8,9 +8,9 @@ const enums = require("../enums");
 //@route GET /plots
 //@access private
 const getAllPlots = asyncHandler(async (req, res) => {
-  const block = await Block.find().lean();
-  if (!block?.length) {
-    return res.status(404).json({ message: "No notes found" });
+  const plot = await Plot.find().lean();
+  if (!plot?.length) {
+    return res.status(404).json({ message: "No plot found" });
   }
 
   // Add username to each note before sending the response
@@ -24,7 +24,7 @@ const getAllPlots = asyncHandler(async (req, res) => {
   // );
 
   // res.json(notesWithUser);
-  res.status(200).json({ message: "List of found blocks", data: block });
+  res.status(200).json({ message: "List of found plots", data: plot });
   // res.status(201).json({ messaage: `New Block ${block.name} created` });
 });
 
@@ -155,16 +155,16 @@ const deletePlot = asyncHandler(async (req, res) => {
   const { _id } = req.body;
   //Validate fields
   if (!_id) {
-    return res.status(400).json({ message: "Block ID Required" });
+    return res.status(400).json({ message: "Plot ID Required" });
   }
   //Find Note
-  const block = await Block.findById(_id).exec();
-  if (!block) {
-    return res.status(400).json({ message: "Block not found!" });
+  const plot = await Plot.findById(_id).exec();
+  if (!plot) {
+    return res.status(400).json({ message: "Plot not found!" });
   }
   //Delete Note
-  const result = await block.deleteOne();
-  const reply = `Block ${result.name} deleted`;
+  const result = await plot.deleteOne();
+  const reply = `Block ${result.plot_number} deleted`;
   res.json({ message: reply });
 });
 

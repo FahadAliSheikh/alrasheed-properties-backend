@@ -26,6 +26,24 @@ const getAllBlocks = asyncHandler(async (req, res) => {
   // res.status(201).json({ messaage: `New Block ${block.name} created` });
 });
 
+//@desc Get single Block
+//@route GET /block/:id
+//@access private
+const getBlockById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(404).json({ message: "Please provide block id" });
+  }
+  const block = await Block.findById(id);
+  if (!block) {
+    return res.status(404).json({ message: "No block found" });
+  }
+
+  // res.json(notesWithUser);
+  res.status(200).json({ message: "Found plot", data: block });
+  // res.status(201).json({ messaage: `New Block ${block.name} created` });
+});
+
 //@desc  Create new Block
 //@route POST /blocks
 //@access private
@@ -134,6 +152,7 @@ const deleteBlock = asyncHandler(async (req, res) => {
 
 module.exports = {
   getAllBlocks,
+  getBlockById,
   createNewBlock,
   updateBlock,
   deleteBlock,

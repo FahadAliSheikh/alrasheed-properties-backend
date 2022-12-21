@@ -10,4 +10,6 @@ router
   .patch(protect, plotsController.updatePlot)
   .delete(protect, plotsController.deletePlot);
 
+router.get("/:id", plotsController.getPlotById);
+
 module.exports = router;

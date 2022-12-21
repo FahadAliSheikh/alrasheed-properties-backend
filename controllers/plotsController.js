@@ -28,6 +28,26 @@ const getAllPlots = asyncHandler(async (req, res) => {
   // res.status(201).json({ messaage: `New Block ${block.name} created` });
 });
 
+//@desc Get single Plot
+//@route GET /plot/:id
+//@access private
+const getPlotById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(404).json({ message: "Please provide plot id" });
+  }
+  const plot = await Plot.findById(id)
+    .populate("blockId")
+    .populate("customerId");
+  if (!plot) {
+    return res.status(404).json({ message: "No plot found" });
+  }
+
+  // res.json(notesWithUser);
+  res.status(200).json({ message: "Found plot", data: plot });
+  // res.status(201).json({ messaage: `New Block ${block.name} created` });
+});
+
 //@desc  Create new Plot
 //@route POST /plots
 //@access private
@@ -204,6 +224,7 @@ const deletePlot = asyncHandler(async (req, res) => {
 
 module.exports = {
   getAllPlots,
+  getPlotById,
   createNewPlot,
   updatePlot,
   deletePlot,

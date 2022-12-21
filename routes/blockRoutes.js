@@ -9,6 +9,6 @@ router
   .post(protect, blocksController.createNewBlock)
   .patch(protect, blocksController.updateBlock)
   .delete(protect, blocksController.deleteBlock);
-router.get("/:id", blocksController.getBlockById);
+router.get("/:id", protect, blocksController.getBlockById);
 
 module.exports = router;

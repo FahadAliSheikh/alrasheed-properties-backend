@@ -34,6 +34,7 @@ app.use("/notes", require("./routes/noteRoutes.js"));
 app.use("/blocks", require("./routes/blockRoutes.js"));
 app.use("/plots", require("./routes/plotRoutes.js"));
 app.use("/bookings", require("./routes/bookingRoutes.js"));
+app.use("/installments", require("./routes/installmentRoutes.js"));
 
 app.all("*", (req, res) => {
   res.status(404);

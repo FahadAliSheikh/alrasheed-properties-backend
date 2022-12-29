@@ -37,7 +37,6 @@ const enums = require("../enums");
 // });
 
 const getAllPlots = asyncHandler(async (req, res) => {
-  console.log(req.query.blockId);
   let filters = {};
 
   // Filter plots for a specific blockId

@@ -1,17 +1,114 @@
 const Block = require("../models/Block");
 const Plot = require("../models/Plot");
 const Booking = require("../models/Booking");
+const mongoose = require("mongoose");
 const enums = require("../enums");
 const asyncHandler = require("express-async-handler");
 
 //@desc Get all bookings
 //@route GET /bookings
 //@access private
+// const getAllBookings = asyncHandler(async (req, res) => {
+//   const booking = await Booking.find().populate("plotId");
+//   if (!booking?.length) {
+//     return res.status(404).json({ message: "No booking found" });
+//   }
+
+//   // Add username to each note before sending the response
+//   // See Promise.all with map() here: https://youtu.be/4lqJBBEpjRE
+//   // You could also do this with a for...of loop
+//   // const notesWithUser = await Promise.all(
+//   //   notes.map(async (note) => {
+//   //     const user = await User.findById(note.user).lean().exec();
+//   //     return { ...note, username: user.username };
+//   //   })
+//   // );
+
+//   // res.json(notesWithUser);
+//   res.status(200).json({ message: "List of found blocks", data: booking });
+//   // res.status(201).json({ messaage: `New Block ${block.name} created` });
+// });
+
 const getAllBookings = asyncHandler(async (req, res) => {
-  const booking = await Booking.find().populate("plotId");
-  if (!booking?.length) {
-    return res.status(404).json({ message: "No booking found" });
+  // const booking = await Booking.find().populate("plotId");
+  let filters = {};
+  let customerFilters = {};
+
+  // Filter plots for a specific plotId
+  if (req.query.plotId) {
+    // const plotId = req.query.plotId;
+    filters["plotId"] = new mongoose.Types.ObjectId(req.query.plotId);
   }
+  //Filter plots on basis of ledger page number
+  if (req.query.ledger_page_number) {
+    // const blockId = req.query.blockId;
+    filters["ledger_page_number"] = Number(req.query.ledger_page_number);
+  }
+
+  //Filter plots on basis of ledger page number
+  if (req.query.customer_name) {
+    // const blockId = req.query.blockId;
+    // customerFilters["customer.customer_name"] = req.query.customer_name;
+
+    customerFilters["customer.customer_name"] = {
+      $regex: req.query.customer_name,
+      $options: "i",
+    };
+  }
+  //Filter plots on basis of ledger page number
+  if (req.query.customer_cnic) {
+    // const blockId = req.query.blockId;
+    // customerFilters["customer.customer_name"] = req.query.customer_name;
+
+    customerFilters["customer.cnic"] = {
+      $regex: req.query.customer_cnic,
+      $options: "i",
+    };
+  }
+
+  console.log("filters", filters);
+  console.log("customer filters", customerFilters);
+
+  let pipeline = [
+    {
+      $match: filters,
+    },
+    {
+      $project: {
+        _id: 1,
+        project_name: 1,
+        buying_date: 1,
+        plotId: 1,
+        per_marla_rate: 1,
+        total_amount: 1,
+        advance_amount: 1,
+        no_of_installments: 1,
+        installment_duration: 1,
+        document_expense: 1,
+        ledger_page_number: 1,
+        customer: 1,
+        // plot: "$$ROOT",
+      },
+    },
+    {
+      $lookup: {
+        from: "plots",
+        localField: "plotId",
+        foreignField: "_id",
+        as: "plotId",
+      },
+    },
+    {
+      $unwind: {
+        path: "$plotId",
+      },
+    },
+    {
+      $match: customerFilters,
+    },
+  ];
+
+  const booking = await Booking.aggregate(pipeline).exec();
 
   // Add username to each note before sending the response
   // See Promise.all with map() here: https://youtu.be/4lqJBBEpjRE

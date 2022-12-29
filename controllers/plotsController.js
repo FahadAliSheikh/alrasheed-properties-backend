@@ -8,7 +8,15 @@ const enums = require("../enums");
 //@route GET /plots
 //@access private
 const getAllPlots = asyncHandler(async (req, res) => {
-  const plot = await Plot.find().populate("blockId").populate("customerId");
+  const keyword = req.query.blockId
+    ? {
+        blockId: req.query.blockId,
+      }
+    : {};
+  console.log("keyword", keyword);
+  const plot = await Plot.find(keyword)
+    .populate("blockId")
+    .populate("customerId");
   if (!plot?.length) {
     return res.status(404).json({ message: "No plot found" });
   }

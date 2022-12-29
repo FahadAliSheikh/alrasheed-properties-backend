@@ -5,21 +5,55 @@ const enums = require("../enums");
 //@desc Get all blocks
 //@route GET /blocks
 //@access private
+// const getAllBlocks = asyncHandler(async (req, res) => {
+//   const block = await Block.find().lean();
+//   if (!block?.length) {
+//     return res.status(404).json({ message: "No notes found" });
+//   }
+
+//   // Add username to each note before sending the response
+//   // See Promise.all with map() here: https://youtu.be/4lqJBBEpjRE
+//   // You could also do this with a for...of loop
+//   // const notesWithUser = await Promise.all(
+//   //   notes.map(async (note) => {
+//   //     const user = await User.findById(note.user).lean().exec();
+//   //     return { ...note, username: user.username };
+//   //   })
+//   // );
+
+//   // res.json(notesWithUser);
+//   res.status(200).json({ message: "List of found blocks", data: block });
+//   // res.status(201).json({ messaage: `New Block ${block.name} created` });
+// });
+
 const getAllBlocks = asyncHandler(async (req, res) => {
-  const block = await Block.find().lean();
-  if (!block?.length) {
-    return res.status(404).json({ message: "No notes found" });
+  // const block = await Block.find().lean();
+  // if (!block?.length) {
+  //   return res.status(404).json({ message: "No notes found" });
+  // }
+
+  let filters = {};
+  if (req.query.category) {
+    // const plotId = req.query.plotId;
+    filters["category"] = req.query.category;
   }
 
-  // Add username to each note before sending the response
-  // See Promise.all with map() here: https://youtu.be/4lqJBBEpjRE
-  // You could also do this with a for...of loop
-  // const notesWithUser = await Promise.all(
-  //   notes.map(async (note) => {
-  //     const user = await User.findById(note.user).lean().exec();
-  //     return { ...note, username: user.username };
-  //   })
-  // );
+  let pipeline = [
+    {
+      $match: filters,
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        area: 1,
+        area_unit: 1,
+        category: 1,
+      },
+    },
+  ];
+
+  const block = await Block.aggregate(pipeline).exec();
 
   // res.json(notesWithUser);
   res.status(200).json({ message: "List of found blocks", data: block });

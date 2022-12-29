@@ -1,26 +1,120 @@
 const Plot = require("../models/Plot");
 const Block = require("../models/Block");
-
+const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
 const enums = require("../enums");
 
 //@desc Get all Plots
 //@route GET /plots
 //@access private
+// const getAllPlots = asyncHandler(async (req, res) => {
+//   const keyword = req.query.blockId
+//     ? {
+//         blockId: req.query.blockId,
+//       }
+//     : {};
+//   console.log("keyword", keyword);
+//   const plot = await Plot.find(keyword)
+//     .populate("blockId")
+//     .populate("customerId");
+//   if (!plot?.length) {
+//     return res.status(404).json({ message: "No plot found" });
+//   }
+
+//   // Add username to each note before sending the response
+//   // See Promise.all with map() here: https://youtu.be/4lqJBBEpjRE
+//   // You could also do this with a for...of loop
+//   // const notesWithUser = await Promise.all(
+//   //   notes.map(async (note) => {
+//   //     const user = await User.findById(note.user).lean().exec();
+//   //     return { ...note, username: user.username };
+//   //   })
+//   // );
+
+//   // res.json(notesWithUser);
+//   res.status(200).json({ message: "List of found plots", data: plot });
+//   // res.status(201).json({ messaage: `New Block ${block.name} created` });
+// });
+
 const getAllPlots = asyncHandler(async (req, res) => {
-  const keyword = req.query.blockId
-    ? {
-        blockId: req.query.blockId,
-      }
-    : {};
-  console.log("keyword", keyword);
-  const plot = await Plot.find(keyword)
-    .populate("blockId")
-    .populate("customerId");
-  if (!plot?.length) {
-    return res.status(404).json({ message: "No plot found" });
+  console.log(req.query.blockId);
+  let filters = {};
+
+  // Filter plots for a specific blockId
+  if (req.query.blockId) {
+    // const blockId = req.query.blockId;
+    filters["blockId"] = new mongoose.Types.ObjectId(req.query.blockId);
+  }
+  //Filter plots on basis of ledger page number
+  if (req.query.ledger_page_number) {
+    // const blockId = req.query.blockId;
+    filters["ledger_page_number"] = Number(req.query.ledger_page_number);
   }
 
+  // //Filter plots on basis of ledger page number
+  // if (req.query. ) {
+  //   filters[""] = req.query.ledger_page_number;
+  // }
+
+  //Filter plots on basis of category
+  if (req.query.category) {
+    filters["category"] = req.query.category;
+  }
+
+  //Filter plots on basis of plot type
+  if (req.query.plot_type) {
+    filters["plot_type"] = req.query.plot_type;
+  }
+
+  //Filter plots on basis of sold status
+  let plot_sold_statu = req.query.sold_status;
+  if (plot_sold_statu === "true" || plot_sold_statu === "false") {
+    console.log(plot_sold_statu);
+    filters["sold_status"] = JSON.parse(plot_sold_statu);
+  }
+
+  //Filter plots on basis of plot number
+  if (req.query.plot_number) {
+    filters["plot_number"] = Number(req.query.plot_number);
+  }
+
+  console.log("filters", filters);
+  let pipeline = [
+    {
+      $match: filters,
+    },
+    {
+      $project: {
+        _id: 1,
+        plot_number: 1,
+        plot_type: 1,
+        area: 1,
+        area_unit: 1,
+        category: 1,
+        is_cornered: 1,
+        sold_status: 1,
+        customerId: 1,
+        ledger_page_number: 1,
+        blockId: 1,
+        // plot: "$$ROOT",
+      },
+    },
+    {
+      $lookup: {
+        from: "blocks",
+        localField: "blockId",
+        foreignField: "_id",
+        as: "blockId",
+      },
+    },
+    {
+      $unwind: {
+        path: "$blockId",
+      },
+    },
+  ];
+
+  const plots = await Plot.aggregate(pipeline).exec();
   // Add username to each note before sending the response
   // See Promise.all with map() here: https://youtu.be/4lqJBBEpjRE
   // You could also do this with a for...of loop
@@ -32,7 +126,7 @@ const getAllPlots = asyncHandler(async (req, res) => {
   // );
 
   // res.json(notesWithUser);
-  res.status(200).json({ message: "List of found plots", data: plot });
+  res.status(200).json({ message: "List of found plots", data: plots });
   // res.status(201).json({ messaage: `New Block ${block.name} created` });
 });
 

@@ -2,33 +2,70 @@ const Block = require("../models/Block");
 const Plot = require("../models/Plot");
 const Booking = require("../models/Booking");
 const enums = require("../enums");
+const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
 const Installment = require("../models/Installment");
 
 //@desc Get all installments
 //@route GET /installments
 //@access private
+// const getAllInstallments = asyncHandler(async (req, res) => {
+//   const installment = await Installment.find().exec();
+//   if (!installment?.length) {
+//     return res.status(404).json({ message: "No installment found" });
+//   }
+
+//   // Add username to each note before sending the response
+//   // See Promise.all with map() here: https://youtu.be/4lqJBBEpjRE
+//   // You could also do this with a for...of loop
+//   // const notesWithUser = await Promise.all(
+//   //   notes.map(async (note) => {
+//   //     const user = await User.findById(note.user).lean().exec();
+//   //     return { ...note, username: user.username };
+//   //   })
+//   // );
+
+//   // res.json(notesWithUser);
+//   res
+//     .status(200)
+//     .json({ message: "List of found installments", data: installment });
+//   // res.status(201).json({ messaage: `New Block ${block.name} created` });
+// });
+
 const getAllInstallments = asyncHandler(async (req, res) => {
-  const installment = await Installment.find().exec();
-  if (!installment?.length) {
-    return res.status(404).json({ message: "No installment found" });
+  let filters = {};
+  if (req.query.plotId) {
+    // const plotId = req.query.plotId;
+    filters["plotId"] = new mongoose.Types.ObjectId(req.query.plotId);
+  }
+  if (req.query.bookingId) {
+    // const plotId = req.query.plotId;
+    filters["bookingId"] = new mongoose.Types.ObjectId(req.query.bookingId);
   }
 
-  // Add username to each note before sending the response
-  // See Promise.all with map() here: https://youtu.be/4lqJBBEpjRE
-  // You could also do this with a for...of loop
-  // const notesWithUser = await Promise.all(
-  //   notes.map(async (note) => {
-  //     const user = await User.findById(note.user).lean().exec();
-  //     return { ...note, username: user.username };
-  //   })
-  // );
+  let pipeline = [
+    {
+      $match: filters,
+    },
+    {
+      $project: {
+        _id: 1,
+        plotId: 1,
+        bookingId: 1,
+        amount: 1,
+        account: 1,
+        instalment_month: 1,
+        instalment_date: 1,
+        // plot: "$$ROOT",
+      },
+    },
+  ];
 
-  // res.json(notesWithUser);
+  const installments = await Installment.aggregate(pipeline).exec();
+
   res
     .status(200)
-    .json({ message: "List of found installments", data: installment });
-  // res.status(201).json({ messaage: `New Block ${block.name} created` });
+    .json({ message: "List of found installments", data: installments });
 });
 
 //@desc Get single installments

@@ -198,8 +198,7 @@ const createNewBooking = asyncHandler(async (req, res) => {
   }
 
   // Check for duplicate booking for a plot
-  const duplicate = await Booking.findOne({ plot_id: plotId }).lean().exec();
-
+  const duplicate = await Booking.findOne({ plotId: plotId }).lean().exec();
   if (duplicate) {
     return res.status(409).json({ message: "Duplicate booking for plot" });
   }

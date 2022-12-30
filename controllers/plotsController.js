@@ -3,6 +3,7 @@ const Block = require("../models/Block");
 const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
 const enums = require("../enums");
+const { plot } = require("../enums");
 
 //@desc Get all Plots
 //@route GET /plots
@@ -323,10 +324,84 @@ const deletePlot = asyncHandler(async (req, res) => {
   res.json({ message: reply });
 });
 
+//@desc Get all blocks
+//@route GET /blocks
+//@access private
+const getPlotsSummary = asyncHandler(async (req, res) => {
+  const { blockId, startDate, endDate } = req.query;
+  console.log(req.query);
+  // const block = await Block.find().lean();
+  // if (!block?.length) {
+  //   return res.status(404).json({ message: "No notes found" });
+  // }
+
+  let filters = {};
+  let dateFilters = {};
+  // Filter plots for a specific blockId
+  if (!startDate || !endDate) {
+    res.send("Start and end dates are required!");
+  }
+  if (req.query.blockId) {
+    // const blockId = req.query.blockId;
+    filters["blockId"] = new mongoose.Types.ObjectId(req.query.blockId);
+  }
+
+  if (startDate != null && endDate != null) {
+    filters["createdAt"] = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    };
+  }
+
+  console.log("filters=>", filters);
+  let pipeline = [
+    {
+      $match: filters,
+    },
+    {
+      $project: {
+        _id: 1,
+        blockId: 1,
+        sold_status: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+  ];
+
+  const plots = await Plot.aggregate(pipeline).exec();
+  if (!plots?.length) {
+    return res.status(404).json({ message: "No plots found" });
+  }
+
+  // console.log(plots);
+  let total_plots = plots.length;
+  let sold_plots = await plots.reduce(
+    (counter, { sold_status }) =>
+      sold_status === true ? (counter += 1) : counter,
+    0
+  );
+  let unsold_plots = await plots.reduce(
+    (counter, { sold_status }) =>
+      sold_status === false ? (counter += 1) : counter,
+    0
+  );
+
+  let summary = {
+    total_plots,
+    sold_plots,
+    unsold_plots,
+  };
+
+  res.status(200).json({ message: "Plots summary!", data: summary });
+  // res.status(201).json({ messaage: `New Block ${block.name} created` });
+});
+
 module.exports = {
   getAllPlots,
   getPlotById,
   createNewPlot,
   updatePlot,
   deletePlot,
+  getPlotsSummary,
 };

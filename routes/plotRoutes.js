@@ -9,7 +9,7 @@ router
   .post(protect, plotsController.createNewPlot)
   .patch(protect, plotsController.updatePlot)
   .delete(protect, plotsController.deletePlot);
-
+router.get("/summary", protect, plotsController.getPlotsSummary);
 router.get("/:id", protect, plotsController.getPlotById);
 
 module.exports = router;

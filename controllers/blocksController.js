@@ -26,6 +26,9 @@ const enums = require("../enums");
 //   // res.status(201).json({ messaage: `New Block ${block.name} created` });
 // });
 
+//@desc Get all blocks
+//@route GET /blocks
+//@access private
 const getAllBlocks = asyncHandler(async (req, res) => {
   // const block = await Block.find().lean();
   // if (!block?.length) {

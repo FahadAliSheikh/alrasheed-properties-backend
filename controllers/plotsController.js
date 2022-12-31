@@ -69,7 +69,6 @@ const getAllPlots = asyncHandler(async (req, res) => {
   //Filter plots on basis of sold status
   let plot_sold_statu = req.query.sold_status;
   if (plot_sold_statu === "true" || plot_sold_statu === "false") {
-    console.log(plot_sold_statu);
     filters["sold_status"] = JSON.parse(plot_sold_statu);
   }
 
@@ -78,7 +77,7 @@ const getAllPlots = asyncHandler(async (req, res) => {
     filters["plot_number"] = Number(req.query.plot_number);
   }
 
-  console.log("filters", filters);
+  // console.log("filters", filters);
   let pipeline = [
     {
       $match: filters,
@@ -215,7 +214,6 @@ const createNewPlot = asyncHandler(async (req, res) => {
 
   //Create a new Note
   const plot = await Plot.create(plotObject);
-  console.log(plot);
   if (plot) {
     res.status(201).json({
       messaage: `New Plot with ${plot.plot_number} created`,
@@ -281,7 +279,7 @@ const updatePlot = asyncHandler(async (req, res) => {
     .lean()
     .exec();
 
-  console.log("duplicate", duplicate);
+  // console.log("duplicate", duplicate);
   if (duplicate) {
     return res.status(409).json({ message: "Duplicate plot number" });
   }
@@ -328,32 +326,28 @@ const deletePlot = asyncHandler(async (req, res) => {
 //@route GET /blocks
 //@access private
 const getPlotsSummary = asyncHandler(async (req, res) => {
-  const { blockId, startDate, endDate } = req.query;
-  console.log(req.query);
+  // const { blockId, startDate, endDate } = req.query;
   // const block = await Block.find().lean();
   // if (!block?.length) {
   //   return res.status(404).json({ message: "No notes found" });
   // }
 
   let filters = {};
-  let dateFilters = {};
   // Filter plots for a specific blockId
-  if (!startDate || !endDate) {
-    res.send("Start and end dates are required!");
-  }
+  // if (!startDate || !endDate) {
+  //   res.send("Start and end dates are required!");
+  // }
   if (req.query.blockId) {
-    // const blockId = req.query.blockId;
     filters["blockId"] = new mongoose.Types.ObjectId(req.query.blockId);
   }
 
-  if (startDate != null && endDate != null) {
-    filters["createdAt"] = {
-      $gte: new Date(startDate),
-      $lte: new Date(endDate),
-    };
-  }
+  // if (startDate != null && endDate != null) {
+  //   filters["createdAt"] = {
+  //     $gte: new Date(startDate),
+  //     $lte: new Date(endDate),
+  //   };
+  // }
 
-  console.log("filters=>", filters);
   let pipeline = [
     {
       $match: filters,

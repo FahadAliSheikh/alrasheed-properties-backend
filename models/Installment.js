@@ -20,7 +20,7 @@ const installmentSchema = new mongoose.Schema({
     required: false,
   },
   instalment_month: {
-    type: Date,
+    type: String,
     required: true,
   },
   instalment_date: {

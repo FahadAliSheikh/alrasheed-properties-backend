@@ -1,6 +1,7 @@
 const Block = require("../models/Block");
 const asyncHandler = require("express-async-handler");
 const enums = require("../enums");
+const Plot = require("../models/Plot");
 
 //@desc Get all blocks
 //@route GET /blocks
@@ -180,6 +181,13 @@ const deleteBlock = asyncHandler(async (req, res) => {
   const block = await Block.findById(_id).exec();
   if (!block) {
     return res.status(400).json({ message: "Block not found!" });
+  }
+  // check if block has any plots
+  const blockPlots = await Plot.find({ blockId: block._id });
+  if (blockPlots.length > 0) {
+    return res.status(400).json({
+      message: "Please delete current block's plots before deleting it!",
+    });
   }
   //Delete Note
   const result = await block.deleteOne();

@@ -195,7 +195,11 @@ const createNewPlot = asyncHandler(async (req, res) => {
   }
 
   // Check for duplicate title
-  const duplicate = await Plot.findOne({ plot_number }).lean().exec();
+  const duplicate = await Plot.findOne({
+    $and: [{ plot_number: plot_number }, { blockId: blockId }],
+  })
+    .lean()
+    .exec();
 
   if (duplicate) {
     return res.status(409).json({ message: "Duplicate plot number" });

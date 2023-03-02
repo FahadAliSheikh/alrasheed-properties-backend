@@ -108,7 +108,7 @@ const createNewInstallment = asyncHandler(async (req, res) => {
   }
 
   // Check for  booking for a plot
-  const foundBooking = await Plot.findOne({
+  const foundBooking = await Booking.findOne({
     plotId: plotId,
   }).exec();
 
@@ -125,7 +125,6 @@ const createNewInstallment = asyncHandler(async (req, res) => {
     instalment_month,
     instalment_date,
   };
-
   //Create a new installments
   const createdInst = await Installment.create(instObject);
   console.log(createdInst);

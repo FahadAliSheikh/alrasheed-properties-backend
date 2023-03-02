@@ -1,6 +1,8 @@
 const Block = require("../models/Block");
 const Plot = require("../models/Plot");
 const Booking = require("../models/Booking");
+const Installment = require("../models/Installment");
+
 const mongoose = require("mongoose");
 const enums = require("../enums");
 const asyncHandler = require("express-async-handler");
@@ -121,7 +123,7 @@ const getAllBookings = asyncHandler(async (req, res) => {
   // );
 
   // res.json(notesWithUser);
-  res.status(200).json({ message: "List of found blocks", data: booking });
+  res.status(200).json({ message: "List of found bookings", data: booking });
   // res.status(201).json({ messaage: `New Block ${block.name} created` });
 });
 
@@ -133,11 +135,20 @@ const getBookingById = asyncHandler(async (req, res) => {
   if (!id) {
     return res.status(404).json({ message: "Please provide booking id" });
   }
-  const booking = await Booking.findById(id).populate("plotId");
+  const booking = await Booking.findById(id).populate("plotId").lean();
   if (!booking) {
     return res.status(404).json({ message: "No booking found" });
   }
+  //Get booking installments
+  const fountInstallments = await Installment.find({ bookingId: booking._id });
+  let remainingAmmount = 0;
+  if (fountInstallments && fountInstallments.length > 0) {
+    remainingAmmount = await fountInstallments.reduce((accumulator, object) => {
+      return accumulator + object.amount;
+    }, 0);
+  }
 
+  booking.remainingAmmount = remainingAmmount;
   // res.json(notesWithUser);
   res.status(200).json({ message: "Found booking", data: booking });
   // res.status(201).json({ messaage: `New Block ${block.name} created` });

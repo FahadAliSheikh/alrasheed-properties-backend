@@ -332,7 +332,7 @@ const updateBooking = asyncHandler(async (req, res) => {
   foundBooking.document_expense = document_expense;
   foundBooking.ledger_page_number = ledger_page_number;
   foundBooking.customer.customer_name = customer_name;
-  foundBooking.customer.father_name = customer_name;
+  foundBooking.customer.father_name = father_name;
   foundBooking.customer.cnic = cnic;
   foundBooking.customer.mobile = mobile;
   foundBooking.customer.address = address;

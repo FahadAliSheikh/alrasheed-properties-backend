@@ -161,7 +161,7 @@ const updateInstallment = asyncHandler(async (req, res) => {
   foundInstal.instalment_date = instalment_date;
 
   //Create a new installments
-  const updateInst = await Installment.save();
+  const updateInst = await foundInstal.save();
   console.log(updateInst);
   if (updateInst) {
     res

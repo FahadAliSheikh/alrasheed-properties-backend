@@ -143,7 +143,7 @@ const createNewInstallment = asyncHandler(async (req, res) => {
 const updateInstallment = asyncHandler(async (req, res) => {
   const { _id, account, amount, instalment_month, instalment_date } = req.body;
   // Validate
-  if (_id || !account || !amount || !instalment_month || !instalment_date) {
+  if (!_id || !account || !amount || !instalment_month || !instalment_date) {
     return res.status(400).json({ message: "All fields are required" });
   }
 

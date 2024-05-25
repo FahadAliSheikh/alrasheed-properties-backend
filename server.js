@@ -19,7 +19,8 @@ connectDB();
 app.use(logger);
 
 // add cors middleware
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
+app.use(cors());
 
 app.use(express.json());
 
